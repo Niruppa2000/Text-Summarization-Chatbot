@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Push to Huggingface Hub
-        uses: huggingface/huggingface-cli-action@v0.1.2
+        uses: huggingface/huggingface-cli-action@main
         with:
           token: ${{ secrets.HF_TOKEN }}
           repo_id: <Niruppa2000>/<Text_summarization_chatbot>
