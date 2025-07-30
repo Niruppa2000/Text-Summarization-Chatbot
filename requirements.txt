@@ -34,3 +34,4 @@ SQLAlchemy
 validators==0.28.1
 
 transformers
+featherless
