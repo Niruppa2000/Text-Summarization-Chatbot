@@ -10,11 +10,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-      
-      - name: Push to Hugging Face Hub
-        uses: HuggingFaceH4/huggingface-cli-action@v0.1.0
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          token: ${{ secrets.HF_TOKEN }}
-          repo_id: Niruppa2000/Text_summarization_chatbot
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install huggingface_hub
+
+      - name: Login to Hugging Face CLI
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          huggingface-cli login --token "$HF_TOKEN"
+
+      - name: Push to Hugging Face Hub
+        run: |
+          huggingface-cli repo create Niruppa2000/Text_summarization_chatbot --type=space --yes
+          huggingface-cli upload ./ Niruppa2000/Text_summarization_chatbot --include='*.py' --include='*.pkl' --yes
+
 
