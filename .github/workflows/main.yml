@@ -1,54 +1,35 @@
-name: Deploy Hugging Face Space
+name: Deploy to Hugging Face Spaces
 
 on:
   push:
     branches:
-      - main
+      - main  # or your main branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout GitHub repo
+      uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+    - name: Set Git config for GitHub Actions
+      run: |
+        git config --global user.email "action@github.com"
+        git config --global user.name "GitHub Actions"
 
-      - name: Install huggingface_hub CLI
-        run: pip install -U huggingface_hub
+    - name: Clone Hugging Face Space repo
+      run: |
+        git clone https://Niruppa:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/Niruppa/Text_summarization_chatbot
 
-      - name: Authenticate with Hugging Face
-        run: |
-          mkdir -p ~/.cache/huggingface
-          echo "${HF_TOKEN}" > ~/.cache/huggingface/token
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    - name: Copy files to Hugging Face Space
+      run: |
+        rsync -av --exclude='.git' ./ ./Text_summarization_chatbot/
 
-      - name: Create Hugging Face Space
-        run: |
-          hf repo create Niruppa2000/Text_summarization_chatbot \
-            --repo-type space \
-            --space-sdk streamlit \
-            --private || echo "Repo may already exist"
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    - name: Push to Hugging Face Space
+      run: |
+        cd Text_summarization_chatbot
+        git add .
+        git commit -m "Auto-update from GitHub Actions" || echo "Nothing to commit"
+        git push
 
-      - name: Push code to Hugging Face Space
-        run: |
-          git config --global user.email "action@github.com"
-          git config --global user.name "GitHub Action"
-
-          git clone https://Niruppa:${HF_TOKEN}@huggingface.co/spaces/Niruppa/Text_summarization_chatbot
-
-          rsync -av --exclude='Text_summarization_chatbot/' ./ Text_summarization_chatbot/
-          
-          cd Text_summarization_chatbot
-          git add .
-          git commit -m "Auto-update from GitHub Actions" || echo "Nothing to commit"
-          git push
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
