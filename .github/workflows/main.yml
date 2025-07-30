@@ -21,33 +21,32 @@ jobs:
       - name: Install huggingface_hub CLI
         run: pip install -U huggingface_hub
 
-      - name: Authenticate with Hugging Face (non-interactive)
+      - name: Authenticate Hugging Face (non-interactive)
         run: |
           mkdir -p ~/.cache/huggingface
           echo "${HF_TOKEN}" > ~/.cache/huggingface/token
-
-      - name: Create Hugging Face Space (only if it doesn't exist)
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+
+      - name: Create Hugging Face Space (if not exists)
         run: |
           hf repo create Text_summarization_chatbot \
             --repo-type space \
             --space-sdk streamlit \
             --private || echo "Repo may already exist"
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
       - name: Push code to Space
         run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
-          git clone https://huggingface.co/spaces/Niruppa2000/Text_summarization_chatbot
+
+          git clone https://${HF_TOKEN}@huggingface.co/spaces/Niruppa2000/Text_summarization_chatbot
           cp -r * Text_summarization_chatbot/
           cd Text_summarization_chatbot
           git add .
-          git commit -m "Update Space from GitHub Actions" || echo "No changes to commit"
+          git commit -m "Update Space from GitHub Actions" || echo "Nothing to commit"
           git push
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-
-
-
-
