@@ -21,16 +21,16 @@ jobs:
       - name: Install huggingface_hub CLI
         run: pip install -U huggingface_hub
 
-      - name: Authenticate with Hugging Face (non-interactive)
+      - name: Authenticate with Hugging Face
         run: |
           mkdir -p ~/.cache/huggingface
           echo "${HF_TOKEN}" > ~/.cache/huggingface/token
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
-      - name: Create Hugging Face Space (only if it doesn't exist)
+      - name: Create Hugging Face Space
         run: |
-          hf repo create Text_summarization_chatbot \
+          hf repo create Niruppa2000/Text_summarization_chatbot \
             --repo-type space \
             --space-sdk streamlit \
             --private || echo "Repo may already exist"
@@ -44,7 +44,8 @@ jobs:
 
           git clone https://Niruppa:${HF_TOKEN}@huggingface.co/spaces/Niruppa/Text_summarization_chatbot
 
-          cp -r * Text_summarization_chatbot/
+          rsync -av --exclude='Text_summarization_chatbot/' ./ Text_summarization_chatbot/
+          
           cd Text_summarization_chatbot
           git add .
           git commit -m "Auto-update from GitHub Actions" || echo "Nothing to commit"
