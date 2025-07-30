@@ -1,0 +1,15 @@
+name: Sync to Huggingface Hub
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Push to Huggingface Hub
+        uses: huggingface/huggingface-cli-action@v0.1.2
+        with:
+          token: ${{ secrets.HF_TOKEN }}
+          repo_id: <Niruppa2000>/<Text_summarization_chatbot>
