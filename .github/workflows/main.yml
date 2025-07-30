@@ -42,7 +42,7 @@ jobs:
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
 
-          git clone https://Niruppa2000:${HF_TOKEN}@huggingface.co/spaces/Niruppa2000/Text_summarization_chatbot
+          git clone https://Niruppa:${HF_TOKEN}@huggingface.co/spaces/Niruppa2000/Text_summarization_chatbot
 
           cp -r * Text_summarization_chatbot/
           cd Text_summarization_chatbot
