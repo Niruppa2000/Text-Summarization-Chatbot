@@ -1,4 +1,4 @@
-name: Sync to Huggingface Hub
+name: Deploy Hugging Face Space
 
 on:
   push:
@@ -18,29 +18,24 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
-        run: |
-          pip install huggingface_hub
+      - name: Install huggingface_hub CLI
+        run: pip install -U huggingface_hub
 
-      - name: Login to Hugging Face
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      - name: Authenticate with Hugging Face (non-interactive)
         run: |
-          echo "$HF_TOKEN" | huggingface-cli login
+          mkdir -p ~/.cache/huggingface
+          echo "${HF_TOKEN}" > ~/.cache/huggingface/token
 
-      - name: Create Hugging Face Space
+      - name: Create Hugging Face Space (only if it doesn't exist)
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           hf repo create Text_summarization_chatbot \
             --repo-type space \
             --space-sdk streamlit \
-            --private \
-            --yes
+            --private || echo "Repo may already exist"
 
-      - name: Push files to Space
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      - name: Push code to Space
         run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
@@ -48,8 +43,10 @@ jobs:
           cp -r * Text_summarization_chatbot/
           cd Text_summarization_chatbot
           git add .
-          git commit -m "Auto-update from GitHub Actions"
+          git commit -m "Update Space from GitHub Actions" || echo "No changes to commit"
           git push
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
 
 
