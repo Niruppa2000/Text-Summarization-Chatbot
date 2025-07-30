@@ -1,33 +1,56 @@
-import validators,streamlit as st
+import streamlit as st
+import validators
 from langchain.prompts import PromptTemplate
-from langchain_groq import ChatGroq
 from langchain.chains.summarize import load_summarize_chain
 from langchain_community.document_loaders import YoutubeLoader, UnstructuredURLLoader
 from dotenv import load_dotenv
+from featherless import Featherless
 import os
 
-# Optional: Load API key from .env (for local dev)
+# Load environment variables (optional for local testing)
 load_dotenv()
 
-# 🌐 Streamlit App
-st.set_page_config(page_title="LangChain: Summarize Text From YouTube or Website", page_icon="🦜")
-st.title("🦜 LangChain: Summarize Text From YouTube or Website")
-st.subheader("Summarize URL")
+# 🌐 Streamlit App Setup
+st.set_page_config(page_title="LangChain Summarizer", page_icon="🦜")
+st.title("🦜 LangChain: Summarize YouTube or Website Content")
+st.subheader("Summarize content from a URL (YouTube or article)")
 
-# 🔐 Get Groq API Key and URL
+# 🔑 Sidebar for API Key
 with st.sidebar:
-    groq_api_key = st.text_input("🔑 GROQ_API_KEY", type="password")
+    st.markdown("## 🔐 Featherless API Key")
+    featherless_api_key = st.text_input("Enter FEATHERLESS_KEY", type="password")
 
-# 🧠 LLM Initialization (inside if to prevent errors)
+# ✅ Initialize Featherless LLM
 llm = None
-if groq_api_key:
+if featherless_api_key:
     try:
-        llm = ChatGroq(model="gemma2-9b-it", api_key=groq_api_key)  # 🔁 Fixed: use `api_key`, not `groq_api_key`
-    except Exception as e:
-        st.sidebar.error(f"Error initializing Groq LLM: {e}")
+        client = Featherless(api_key=featherless_api_key)
 
-# 🌍 Get the URL
-generic_url = st.text_input("Enter YouTube or Website URL", label_visibility="visible")
+        from langchain_core.language_models.chat_models import ChatGeneration
+        from langchain_core.messages import HumanMessage, SystemMessage
+
+        class FeatherlessChatLLM:
+            def __init__(self, client, model="featherless-ai/summarizer"):
+                self.client = client
+                self.model = model
+
+            def invoke(self, prompt):
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant that summarizes."},
+                        {"role": "user", "content": prompt}
+                    ]
+                )
+                return response.choices[0].message.content
+
+        llm = FeatherlessChatLLM(client)
+
+    except Exception as e:
+        st.sidebar.error(f"⚠️ Failed to initialize Featherless: {e}")
+
+# 🌐 User URL input
+generic_url = st.text_input("Enter YouTube or Web Article URL")
 
 # 🧾 Prompt Template
 prompt_template = """
@@ -36,9 +59,9 @@ You are an expert summarizer. Provide a clear and concise 300-word summary of th
 """
 prompt = PromptTemplate(template=prompt_template, input_variables=["text"])
 
-# 🧠 Process Button
+# 🚀 Summarization Logic
 if st.button("📝 Summarize"):
-    if not groq_api_key.strip() or not generic_url.strip():
+    if not featherless_api_key.strip() or not generic_url.strip():
         st.error("Please provide both the API key and a valid URL.")
     elif not validators.url(generic_url):
         st.error("Invalid URL. Please enter a proper YouTube or website link.")
@@ -46,8 +69,8 @@ if st.button("📝 Summarize"):
         st.error("LLM not initialized. Check your API key.")
     else:
         try:
-            with st.spinner("⏳ Summarizing content..."):
-                # 🧲 Load documents
+            with st.spinner("⏳ Loading content and summarizing..."):
+                # Load documents
                 if "youtube.com" in generic_url:
                     loader = YoutubeLoader.from_youtube_url(generic_url, add_video_info=True)
                 else:
@@ -55,18 +78,20 @@ if st.button("📝 Summarize"):
                         urls=[generic_url],
                         ssl_verify=True,
                         headers={
-                            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
+                            "User-Agent": "Mozilla/5.0"
                         }
                     )
                 docs = loader.load()
 
-                # 🔗 Summarization Chain
+                # Create summarization chain
                 chain = load_summarize_chain(llm=llm, chain_type="stuff", prompt=prompt)
                 summary = chain.invoke(docs)
 
-                # ✅ Output
-                st.success("✅ Summary Generated:")
+                # Display result
+                st.success("✅ Summary:")
                 st.write(summary)
+
         except Exception as e:
-            st.error("❌ An error occurred:")
+            st.error("❌ Error occurred:")
             st.exception(e)
+
